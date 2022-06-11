@@ -456,15 +456,12 @@ void solve()
 	{
 		int x,y;
 		cin>>x>>y;
-		g.addEdge(y,x,0);
+		g.addEdge(x,y,0);
 	}
-	int restrict=0;
+	int ans=n;
 	FORe(i,n){
 		vector<bool> visited(n+1);
-		int nodes=g.dfs(i,visited);
-		if(nodes!=n){
-			restrict=max(restrict,nodes);
-		}
+		ans=min(ans,g.dfs(i,visited));
 	}
-	cout<<n-restrict;
+	cout<<ans;
 }
