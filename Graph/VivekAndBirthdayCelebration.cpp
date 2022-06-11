@@ -355,17 +355,18 @@ public:
 			}
 		}
 	}
-	void dfs(ll src, vector<bool> &visited)
+	int dfs(ll src, vector<bool> &visited)
 	{
 		visited[src] = true;
-		cout << src << " ";
+		int count=1;
 		for (auto v : adjList[src])
 		{
 			if (!visited[v.ff])
 			{
-				dfs(v.ff, visited);
+				count+=dfs(v.ff, visited);
 			}
 		}
+		return count;
 	}
 	ll primsMST()
 	{
@@ -433,7 +434,7 @@ signed main()
 #endif
 	
 	int t = 1;
-	/*Is Single Test Case?*/ cin >> t;
+	// /*Is Single Test Case?*/ cin >> t;
 	FORe(i, t)
 	{
 		// cout << "Case #"<<i<<": ";
@@ -451,23 +452,19 @@ void solve()
 	int n,d;
 	cin>>n>>d;
 	Graph g(n);
-	FOR(i,n)
+	FOR(i,d)
 	{
 		int x,y;
 		cin>>x>>y;
 		g.addEdge(y,x,0);
 	}
-	int count=n;
+	int restrict=0;
 	FORe(i,n){
 		vector<bool> visited(n+1);
-		FORe(j,n){
-			if(!visited[j]){
-				int nodes=g.dfs(j,visited);
-				if(n-nodes!=0){
-					count=min(count,n-nodes);
-				}
-			}
+		int nodes=g.dfs(i,visited);
+		if(nodes!=n){
+			restrict=max(restrict,nodes);
 		}
 	}
-
+	cout<<n-restrict;
 }
