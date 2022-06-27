@@ -28,12 +28,10 @@ using namespace std;
 /*Is the input/output taken from/to files?*/ #define ONLINE_JUDGE 0
 
 /*---------------------POLICY BASED DATA STRUCTURE----------------------*/
-
 #include <ext/pb_ds/assoc_container.hpp>
 #include <ext/pb_ds/tree_policy.hpp>
 using namespace __gnu_pbds;
 typedef tree<int, null_type, less<int>, rb_tree_tag, tree_order_statistics_node_update> ordered_set;
-/*Don't treat int as long long?*/ #define int ll
 
 /*------------------------IMPORTANT CONSTANTS---------------------------*/
 const int Alp = 26;
@@ -49,6 +47,8 @@ const ll ROOTN = 320;
 const ll LOGN = 18;
 const ll INF = 1e18 + 1022;
 /*----------------------------------------------------------------------*/
+
+/*Don't treat int as long long?*/ #define int ll
 
 void solve();
 
@@ -148,23 +148,6 @@ ll fibonacci(ll n)
         fib[0] = fib[1] = 1;
     }
     return fibonacci_helper(n - 1);
-}
-
-vector<vl> pascalTriangle;
-void ncr_init(ll n)
-{
-    pascalTriangle.clear();
-    pascalTriangle.resize(n + 1);
-    FOR(i, n + 1)
-    {
-        pascalTriangle[i].resize(i + 1);
-        pascalTriangle[i][0] = 1;
-        pascalTriangle[i][i] = 1;
-        FORe(j, i - 1)
-        {
-            pascalTriangle[i][j] = pascalTriangle[i - 1][j - 1] + pascalTriangle[i - 1][j];
-        }
-    }
 }
 
 vector<vl> matrixMultiply(vector<vl> &a, vector<vl> &b)
@@ -316,6 +299,89 @@ void MergeSort(vl &a, ll begin, ll end)
     }
 }
 
+/*-------------------------SOME IMPORTANT CLASSES-----------------------*/
+class SegTree
+{
+public:
+    ll n;
+    vl lazy;
+    vl tree;
+    SegTree(ll n)
+    {
+        this->n = n;
+        this->lazy = vl(4 * n + 1);
+        this->tree = vl(4 * n + 1);
+    }
+    void build(vl &a, ll s, ll e, ll index)
+    {
+        if (s == e)
+        {
+            tree[index] = a[s];
+            return;
+        }
+        ll mid = (s + e) / 2;
+        build(a, s, mid, 2 * index);
+        build(a, mid + 1, e, 2 * index + 1);
+        tree[index] = tree[2 * index] + tree[2 * index + 1];
+    }
+    void update(ll s, ll e, ll l, ll r, ll val, ll index)
+    {
+        if (lazy[index] != 0)
+        {
+            tree[index] += lazy[index] * (e - s + 1);
+            if (s != e)
+            {
+                lazy[2 * index] += lazy[index];
+                lazy[2 * index + 1] += lazy[index];
+            }
+            lazy[index] = 0;
+        }
+        if (s > r || e < l)
+        {
+            return;
+        }
+        if (s >= l && e <= r)
+        {
+            tree[index] += val * (e - s + 1);
+            if (s != e)
+            {
+                lazy[2 * index] += val;
+                lazy[2 * index + 1] += val;
+            }
+            return;
+        }
+        ll mid = (s + e) / 2;
+        update(s, mid, l, r, val, 2 * index);
+        update(mid + 1, e, l, r, val, 2 * index + 1);
+        tree[index] = tree[2 * index] + tree[2 * index + 1];
+    }
+    ll query(ll s, ll e, ll l, ll r, ll index)
+    {
+        if (lazy[index] != 0)
+        {
+            tree[index] += lazy[index] * (e - s + 1);
+            if (s != e)
+            {
+                lazy[2 * index] += lazy[index];
+                lazy[2 * index + 1] += lazy[index];
+            }
+            lazy[index] = 0;
+        }
+        if (s > r || e < l)
+        {
+            return 0;
+        }
+        if (s >= l && e <= r)
+        {
+            return tree[index];
+        }
+        ll mid = (s + e) / 2;
+        ll left = query(s, mid, l, r, 2 * index);
+        ll right = query(mid + 1, e, l, r, 2 * index + 1);
+        return left + right;
+    }
+};
+
 class Graph
 {
 public:
@@ -417,6 +483,57 @@ public:
             }
         }
         return dist;
+    }
+};
+
+class TrieNode
+{
+public:
+    char data;
+    unordered_map<char, TrieNode*> children;
+    bool terminal;
+    TrieNode(char c = '\0')
+    {
+        data = c;
+        terminal = false;
+    }
+};
+class Trie
+{
+public:
+    TrieNode *root;
+    Trie()
+    {
+        root = new TrieNode();
+    }
+    void insert(string &s)
+    {
+        TrieNode *curr = root;
+        for (auto c : s)
+        {
+            if (curr->children.find(c) == curr->children.end())
+            {
+                curr = curr->children[c] = new TrieNode(c);
+            }
+            else
+            {
+                curr = curr->children[c];
+            }
+        }
+        curr->terminal = true;
+    }
+    bool search(string &s)
+    {
+        TrieNode *curr = root;
+        for (auto c : s)
+        {
+            if (curr->children.find(c) == curr->children.end())
+            {
+                return false;
+            }
+            curr = curr->children[c];
+        }
+        return curr->terminal;
     }
 };
 /*----------------------------------------------------------------------*/
