@@ -485,57 +485,6 @@ public:
         return dist;
     }
 };
-
-class TrieNode
-{
-public:
-    char data;
-    unordered_map<char, TrieNode*> children;
-    bool terminal;
-    TrieNode(char c = '\0')
-    {
-        data = c;
-        terminal = false;
-    }
-};
-class Trie
-{
-public:
-    TrieNode *root;
-    Trie()
-    {
-        root = new TrieNode();
-    }
-    void insert(string &s)
-    {
-        TrieNode *curr = root;
-        for (auto c : s)
-        {
-            if (curr->children.find(c) == curr->children.end())
-            {
-                curr = curr->children[c] = new TrieNode(c);
-            }
-            else
-            {
-                curr = curr->children[c];
-            }
-        }
-        curr->terminal = true;
-    }
-    bool search(string &s)
-    {
-        TrieNode *curr = root;
-        for (auto c : s)
-        {
-            if (curr->children.find(c) == curr->children.end())
-            {
-                return false;
-            }
-            curr = curr->children[c];
-        }
-        return curr->terminal;
-    }
-};
 /*----------------------------------------------------------------------*/
 
 signed main()
