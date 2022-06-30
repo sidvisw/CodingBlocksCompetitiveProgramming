@@ -381,8 +381,9 @@ public:
 		return left + right;
 	}
 };
-vi tin,tout,Eulertour;
-int timer;
+vi tin,tout,depth,minDist;
+int timer=0;
+int par[MAXN][LOGN];
 class Graph
 {
 public:
@@ -401,38 +402,63 @@ public:
 			adjList[v].pb(mp(u, w));
 		}
 	}
-	void bfs(ll src)
+	void bfs(vi &unprocessed)
 	{
 		vector<bool> visited(vertices + 1);
 		queue<ll> q;
-		q.push(src);
-		visited[src] = true;
+		for(auto &x:unprocessed){
+			minDist[x]=0;
+			q.push(x);
+			visited[x] = true;
+		}
 		while (!q.empty())
 		{
 			ll u = q.front();
 			q.pop();
-			cout << u << " ";
+			// cout << u << " ";
 			for (auto v : adjList[u])
 			{
 				if (!visited[v.ff])
 				{
 					q.push(v.ff);
+					minDist[v.ff]=min(minDist[v.ff],1+minDist[u]);
 					visited[v.ff] = true;
 				}
 			}
 		}
 	}
-	void dfs(ll src, int p)
+	void dfs(ll src,int p)
 	{
-		tin[src]=timer++;
-		Eulertour.pb(src);
-		for(auto v:adjList[src]){
-			if(v.ff!=p){
-				dfs(v.ff,src);
+		depth[src]=depth[p]+1;
+		par[src][0]=p;
+		for(int i=1;i<LOGN;i++){
+			par[src][i]=par[par[src][i-1]][i-1];
+		}
+		tin[src]=++timer;
+		for (auto v : adjList[src])
+		{
+			if (v.ff!=p)
+			{
+				dfs(v.ff, src);
 			}
 		}
-		Eulertour.pb(src);
-		tout[src]=timer++;
+		tout[src]=timer;
+	}
+	bool isAncestor(int u,int v){
+		return tin[u]<=tin[v]&&tout[u]>=tout[v];
+	}
+	int lca(int u,int v){
+		if(isAncestor(u,v))return u;
+		if(isAncestor(v,u))return v;
+		for(int i=LOGN-1;i>=0;i--){
+			if(!isAncestor(par[u][i],v)){
+				u=par[u][i];
+			}
+		}
+		return par[u][0];
+	}
+	int dist(int u,int v){
+		return depth[u]+depth[v]-2*depth[lca(u,v)];
 	}
 	ll primsMST()
 	{
@@ -486,57 +512,6 @@ public:
 		return dist;
 	}
 };
-
-class TrieNode
-{
-public:
-	char data;
-	unordered_map<char, TrieNode*> children;
-	bool terminal;
-	TrieNode(char c = '\0')
-	{
-		data = c;
-		terminal = false;
-	}
-};
-class Trie
-{
-public:
-	TrieNode *root;
-	Trie()
-	{
-		root = new TrieNode();
-	}
-	void insert(string &s)
-	{
-		TrieNode *curr = root;
-		for (auto c : s)
-		{
-			if (curr->children.find(c) == curr->children.end())
-			{
-				curr = curr->children[c] = new TrieNode(c);
-			}
-			else
-			{
-				curr = curr->children[c];
-			}
-		}
-		curr->terminal = true;
-	}
-	bool search(string &s)
-	{
-		TrieNode *curr = root;
-		for (auto c : s)
-		{
-			if (curr->children.find(c) == curr->children.end())
-			{
-				return false;
-			}
-			curr = curr->children[c];
-		}
-		return curr->terminal;
-	}
-};
 /*----------------------------------------------------------------------*/
 
 signed main()
@@ -563,106 +538,46 @@ signed main()
 }
 
 /*Your functions here*/
-vi build(vi &a){
-	int n=a.size();
-	int rn=sqrt(n);
-	vi blocks(rn+1);
-	int id=-1;
-	int sum=0;
-	FOR(i,n){
-		if(i%rn==0){
-			id++;
-			sum=0;
-		}
-		sum+=a[i];
-		blocks[id]=sum;
-	}
-	return blocks;
-}
-void update(vi&blocks,vi&a,int idx,int val,int rn){
-	blocks[idx/rn]+=(val-a[idx]);
-	a[idx]=val;
-}
-int query(vi&blocks,vi&a,int idx,int rn){
-	int index=idx;
-	int currBlockId=idx/rn;
-	int right=a.size();
-	if(blocks[currBlockId]==0){
-		while(idx<a.size()&&idx%rn!=0)idx++;
-		currBlockId++;
-	}
-	while(currBlockId<=rn&&blocks[currBlockId]==0){
-		currBlockId++;
-		idx+=rn;
-	}
-	while(idx<a.size()&&a[idx]==0){
-		idx++;
-	}
-	if(idx==a.size()){
-		right=INF;
-	}
-	else{
-		right=idx;
-	}
-	idx=index;
-	int left=0;
-	if(blocks[currBlockId]==0){
-		while(idx>=0&&idx%rn!=0)idx--;
-		idx--;
-		currBlockId--;
-	}
-	while(currBlockId>=0&&blocks[currBlockId]==0){
-		currBlockId--;
-		idx-=rn;
-	}
-	while(idx>=0&&a[idx]==0){
-		idx--;
-	}
-	if(idx==-1){
-		left=-INF;
-	}
-	else{
-		left=idx;
-	}
-	return min(index-left,right-index);
-}
+
 void solve()
 {
 	int n,m;
 	cin>>n>>m;
 	Graph g(n);
 	FOR(i,n-1){
-		int x,y;
-		cin>>x>>y;
-		g.addEdge(x,y);
+		int u,v;
+		cin>>u>>v;
+		g.addEdge(u,v);
 	}
 	tin.resize(n+1);
 	tout.resize(n+1);
-	Eulertour.clear();
-	timer=0;
+	depth.resize(n+1);
+	depth[0]=-1;
+	tout[0]=n+1;
 	g.dfs(1,0);
-	vi v(Eulertour.size());
-	FOR(i,Eulertour.size()){
-		if(Eulertour[i]==1){
-			v[i]=1;
+	int rm=sqrt(m);
+	vi unprocessed;
+	minDist=depth;
+	FOR(i,m){
+		if(i%rm==0){
+			g.bfs(unprocessed);
+			unprocessed.clear();
 		}
-	}
-	vector<int> blocks=build(v);
-	while(m--){
 		int type;
 		cin>>type;
 		if(type){
-			int node;
-			cin>>node;
-			update(blocks,v,tin[node],1,blocks.size()-1);
-			update(blocks,v,tout[node],1,blocks.size()-1);
+			int v;
+			cin>>v;
+			unprocessed.pb(v);
 		}
 		else{
-			int node;
-			cin>>node;
-			int left=query(blocks,v,tin[node],blocks.size()-1);
-			int right=query(blocks,v,tout[node],blocks.size()-1);
-			cout<<min(left,right)<<endl;
+			int v;
+			cin>>v;
+			int MinDist=minDist[v];
+			for(auto x:unprocessed){
+				MinDist=min(MinDist,g.dist(v,x));
+			}
+			cout<<MinDist<<endl;
 		}
 	}
 }
